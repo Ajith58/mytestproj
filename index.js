@@ -1,18 +1,41 @@
-var express = require('express');
-var app = express();
+var express = require('express'),
 
-app.set('port', (process.env.PORT || 5000));
+    app = express(),
+    port = process.env.PORT || 5000,
+    mongoose = require('mongoose'),
+    Task = require('./api/models/todoListModel'),
+    bodyParser = require('body-parser');
 
-app.use(express.static(__dirname + '/public'));
-
-// views is directory for all template files
-app.set('views', __dirname + '/views');
-app.set('view engine', 'ejs');
-//Adding comments
-app.get('/', function(request, response) {
-  response.render('pages/index');
+mongoose.Promise = global.Promise;
+mongoose.connect("mongodb://root:root@ds121665.mlab.com:21665/index", {
+    useMongoClient: true
 });
 
-app.listen(app.get('port'), function() {
-  console.log('Node app is running on port', app.get('port'));
+app.use(bodyParser.json());
+
+var allowCrossDomain = function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === "OPTIONS")
+        res.status(200).send({
+            url: req.originalUrl
+        });
+    else
+        next();
+}
+app.use(allowCrossDomain);
+
+
+var routes = require('./api/routes/todoListRoutes');
+routes(app);
+
+app.use(function(req, res) { // sending unknown request
+    res.status(404).send({
+        url: req.originalUrl + ' not found'
+    })
 });
+
+app.listen(port); // setting port
+
+console.log('todo list RESTful API server started on: ' + port);
